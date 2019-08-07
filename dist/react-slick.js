@@ -1463,48 +1463,68 @@
 
               _defineProperty(
                 _assertThisInitialized(_this),
+                "onClickImage",
+                function(image) {
+                  if (!image.onclick) {
+                    image.onclick = function() {
+                      return image.parentNode.focus();
+                    };
+                  } else {
+                    var prevClickHandler = image.onclick;
+
+                    image.onclick = function() {
+                      prevClickHandler();
+                      image.parentNode.focus();
+                    };
+                  }
+                }
+              );
+
+              _defineProperty(
+                _assertThisInitialized(_this),
+                "onLoadImage",
+                function(image, handler) {
+                  if (!image.onload) {
+                    if (_this.props.lazyLoad) {
+                      image.onload = function() {
+                        _this.adaptHeight();
+
+                        _this.callbackTimers.push(
+                          setTimeout(_this.onWindowResized, _this.props.speed)
+                        );
+                      };
+                    } else {
+                      image.onload = handler;
+
+                      image.onerror = function() {
+                        handler();
+                        _this.props.onLazyLoadError &&
+                          _this.props.onLazyLoadError();
+                      };
+                    }
+                  }
+                }
+              );
+
+              _defineProperty(
+                _assertThisInitialized(_this),
                 "checkImagesLoad",
                 function() {
                   var images = document.querySelectorAll(".slick-slide img");
                   var imagesCount = images.length;
                   var loadedCount = 0;
+
+                  var handler = function handler() {
+                    return (
+                      ++loadedCount &&
+                      loadedCount >= imagesCount &&
+                      _this.onWindowResized()
+                    );
+                  };
+
                   Array.prototype.forEach.call(images, function(image) {
-                    if (!image.onclick) {
-                      image.onclick = function() {
-                        return image.parentNode.focus();
-                      };
-                    } else {
-                      image.onclick = function() {
-                        image.onclick();
-                        image.parentNode.focus();
-                      };
-                    }
-
-                    if (!image.onload) {
-                      if (_this.props.lazyLoad) {
-                        image.onload = function() {
-                          _this.adaptHeight();
-
-                          _this.callbackTimers.push(
-                            setTimeout(_this.onWindowResized, _this.props.speed)
-                          );
-                        };
-                      } else {
-                        image.onload = function() {
-                          loadedCount += 1;
-                          if (loadedCount >= imagesCount)
-                            _this.onWindowResized();
-                        };
-
-                        image.onerror = function() {
-                          loadedCount += 1;
-                          if (loadedCount >= imagesCount)
-                            _this.onWindowResized();
-                          _this.props.onLazyLoadError &&
-                            _this.props.onLazyLoadError();
-                        };
-                      }
-                    }
+                    image.onclick = _this.onClickImage.bind(image);
+                    image.onload = _this.onLoadImage.bind(image, handler);
                   });
                 }
               );
