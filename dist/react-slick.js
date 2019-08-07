@@ -1466,26 +1466,16 @@
                 "checkImagesLoad",
                 function() {
                   var images = document.querySelectorAll(".slick-slide img");
-                  var imagesCount = images.length,
-                    loadedCount = 0;
+                  var imagesCount = images.length;
+                  var loadedCount = 0;
                   Array.prototype.forEach.call(images, function(image) {
-                    var handler = function handler() {
-                      return (
-                        ++loadedCount &&
-                        loadedCount >= imagesCount &&
-                        _this.onWindowResized()
-                      );
-                    };
-
                     if (!image.onclick) {
                       image.onclick = function() {
                         return image.parentNode.focus();
                       };
                     } else {
-                      var prevClickHandler = image.onclick;
-
                       image.onclick = function() {
-                        prevClickHandler();
+                        image.onclick();
                         image.parentNode.focus();
                       };
                     }
@@ -1500,10 +1490,16 @@
                           );
                         };
                       } else {
-                        image.onload = handler;
+                        image.onload = function() {
+                          loadedCount += 1;
+                          if (loadedCount >= imagesCount)
+                            _this.onWindowResized();
+                        };
 
                         image.onerror = function() {
-                          handler();
+                          loadedCount += 1;
+                          if (loadedCount >= imagesCount)
+                            _this.onWindowResized();
                           _this.props.onLazyLoadError &&
                             _this.props.onLazyLoadError();
                         };
